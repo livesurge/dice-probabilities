@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools" >
 
     <GridLayout
+        android:id="@+id/ds2_pool"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -92,6 +93,7 @@
         android:layout_weight="3" />
 
     <LinearLayout
+        android:id="@+id/ds2_current"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:animateLayoutChanges="true"
@@ -136,7 +138,7 @@
             android:id="@+id/copy_up"
             style="@style/copy"
             android:text="@string/copy_up"
-            android:textScaleX="2.5" />
+            tools:ignore="InconsistentLayout" />
     </LinearLayout>
 
     <LinearLayout
@@ -149,10 +151,9 @@
             style="@style/clear"
             android:text="@string/clear" />
 
-        <TextView
+        <Button
             android:id="@+id/ds2_answer_probability"
-            style="@style/probability"
-            android:background="@drawable/result_btn" />
+            style="@style/probability" />
 
         <TextView
             android:id="@+id/ds2_answer_fraction"

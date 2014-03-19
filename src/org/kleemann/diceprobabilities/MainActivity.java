@@ -1,10 +1,12 @@
 package org.kleemann.diceprobabilities;
 
 import org.kleemann.diceprobabilities.graph.GraphView;
+import org.kleemann.diceprobabilities.special.SpecialSpinner;
 
 import android.os.Bundle;
 import android.app.Activity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -35,6 +37,8 @@ public class MainActivity extends Activity {
 		this.graph = (GraphView)findViewById(R.id.graph); 
 		
 		this.diceSet1 = new DiceSet(
+				(ViewGroup)findViewById(R.id.ds1_pool),
+				(ViewGroup)findViewById(R.id.ds1_current),
 				new DiceSet.DieType[]{
 						new DiceSet.DieType(1, 
 								(Button)findViewById(R.id.ds1_pool_constant), 
@@ -69,11 +73,13 @@ public class MainActivity extends Activity {
 				(Button)findViewById(R.id.ds1_current_target),
 				(Button)findViewById(R.id.ds1_clear),
 				(TextView)findViewById(R.id.ds1_answer_fraction),
-				(TextView)findViewById(R.id.ds1_answer_probability),
+				(Button)findViewById(R.id.ds1_answer_probability),
 				graph.getSetter1()
 				);
 
 		this.diceSet2 = new DiceSet(
+				(ViewGroup)findViewById(R.id.ds2_pool),
+				(ViewGroup)findViewById(R.id.ds2_current),
 				new DiceSet.DieType[]{
 						new DiceSet.DieType(1, 
 								(Button)findViewById(R.id.ds2_pool_constant), 
@@ -108,7 +114,7 @@ public class MainActivity extends Activity {
 				(Button)findViewById(R.id.ds2_current_target),
 				(Button)findViewById(R.id.ds2_clear),
 				(TextView)findViewById(R.id.ds2_answer_fraction),
-				(TextView)findViewById(R.id.ds2_answer_probability),
+				(Button)findViewById(R.id.ds2_answer_probability),
 				graph.getSetter2()
 				);
 

@@ -1,7 +1,7 @@
 
-# Dice Probabilities
+# PACG Probabilities
 
-This is a small android app that calculates the probabilities of multiple dice exceeding a specified number.  It is particularly designed for playing the game [Pathfinder the card game](http://boardgamegeek.com/boardgame/133038/pathfinder-adventure-card-game-rise-of-the-runelor)
+This is a small android app that calculates the probabilities of multiple dice exceeding a specified number.  It is particularly designed for playing the game [Pathfinder the Card Game](http://boardgamegeek.com/boardgame/133038/pathfinder-adventure-card-game-rise-of-the-runelor)
 
 <a href="https://play.google.com/store/apps/details?id=org.kleemann.diceprobabilities">
   <img alt="Android app on Google Play"
@@ -19,6 +19,8 @@ The following are some of the more obscure features:
 1. To remove a die from the dice set, press the die that is in the target that dice set. (just above the answer percentage)
 
 2. To display a detailed graph of the results, press the background graph (any part of the display that is not a button)
+
+3. Press the target ( >= 10 ) to cycle through several large target values.
 
 ## Tutorial
 
@@ -40,7 +42,7 @@ The following are some of the more obscure features:
 
 The app starts to bog down if you add more than a dozen dice to the dice set. This is outside my use case for the application so I haven't addressed the issue.
 
-### Ugly buttons
+### Ugly Buttons
 
 The colors of the buttons were chosen to match the color of the dice that my play group uses. I understand that they are not the most subtle colors.
 
@@ -66,7 +68,28 @@ $ ant test
 
 ### Eclipse
 
-TODO
+First from bash:
+
+```bash
+$ cd /tmp
+$ git clone http://github.com/sizezero/dice-probabilities.git DiceProbabilities
+$ cd DiceProbabilities
+$ ./setup_eclipse.sh
+```
+
+(windows users will need to hand copy the files specified in setup_eclipse.sh)
+
+Then from Eclipse (assuming workspace is **~/workspace** )
+
+* File > Import > Android > Existing Android Code Into Workspace
+  * Browse > **/tmp/DiceProbabilities**
+  * Unselect the *test* project
+  * Select the option *Copy projects into workspace*
+  * Finish
+* File > Import > Android > Existing Android Code Into Workspace
+  * Browse > **~/workspace/DiceProbabilities/tests**
+  * Leave unselected: *Copy projects into workspace*
+  * Finish
 
 ## Background
 
@@ -80,3 +103,9 @@ The main purpose of this project is:
 * to provide a useful app to my game group
 * to allow me to learn android development
 * to try out github
+
+## Acknowledgements
+
+Thanks to Emma Vokurka for learning Inkscape and making me a cool icon.
+
+Thanks to my Pathfinder playtesting group for their great feedback: Fraser Stanton, Grace Kim, Jonathan Sari, Matthew Baldwin

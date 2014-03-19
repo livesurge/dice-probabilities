@@ -1,17 +1,18 @@
 package org.kleemann.diceprobabilities;
 
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 
 import org.apache.commons.math3.fraction.BigFraction;
-import org.kleemann.diceprobabilities.distribution.CachedCumulativeDistribution;
 import org.kleemann.diceprobabilities.distribution.Distribution;
 import org.kleemann.diceprobabilities.graph.GraphView;
+import org.kleemann.diceprobabilities.special.Special;
+import org.kleemann.diceprobabilities.special.SpecialSpinner;
 
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.SparseIntArray;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
@@ -59,8 +60,9 @@ public class DiceSet {
 	private SpecialSpinner specialSpinner;
 	private Target target;
 	
-	private TextView answer_fraction;
-	private TextView answer_probability;
+	private TextView answerFraction;
+	private Button answerProbability;
+	private Check check;
 	private GraphView.Setter graphSetter;
 	
 	// every time the dice are changed; this is incremented
@@ -74,26 +76,27 @@ public class DiceSet {
 	private final String answerHighest;
 	private final String answerSecondHighest;
 	private final int maxFractionChars;
-
+	
 	private static final String APPROXIMATELY_EQUAL_TO = "\u2245";
-	private static final String GREATER_THAN_OR_EQUAL_TO = "\u2265"; 
-	private static final String RIGHT_ARROW = "\u21e8"; 
 	
 	public DiceSet(
+			ViewGroup poolViewGroup,
+			ViewGroup currentViewGroup,
 			DieType[] dieType,
 			SpecialSpinner specialSpinner,
 			TargetParam[] targetParam,
 			Button targetButton,
 			Button clear,
-			TextView answer_fraction,
-			TextView answer_probability,
+			TextView answerFraction,
+			Button answerProbability,
 			GraphView.Setter graphSetter
 			) {
 		
-		this.answerFormatter = new DecimalFormat(clear.getResources().getString(R.string.answer_format));
+		this.answerFormatter = new DecimalFormat(
+				clear.getResources().getString(R.string.answer_format));
 		this.answerHighest = answerFormatter.format(1.0d);
 		this.answerSecondHighest = clear.getResources().getString(R.string.answer_second_highest);
-		this.maxFractionChars = clear.getResources().getInteger(R.integer.max_fraction_chars); 
+		this.maxFractionChars = clear.getResources().getInteger(R.integer.max_fraction_chars);
 		
 		// associate each Button object with a behavioral object
 		CurrentDiceChanged diceChanged = new CurrentDiceChanged();
@@ -114,14 +117,23 @@ public class DiceSet {
 
 		this.specialSpinner = specialSpinner;
 		specialSpinner.setChangeListener(diceChanged);
-		this.answer_fraction = answer_fraction;
-		this.answer_probability = answer_probability;
+		this.answerFraction = answerFraction;
+		this.answerProbability = answerProbability;
+		this.check = new Check(answerProbability);
 		this.graphSetter = graphSetter;
 
 		final View.OnClickListener clearListener = new Clear();
 		clear.setOnClickListener(clearListener);
 		// explicit clear is necessary to set current constant to GONE
 		clearListener.onClick(clear);
+		
+		// iss13: have the pool gridview and the current linearlayout "eat" clicks so that the user doesn't accidentally
+		// select the background graph
+		final View.OnClickListener doNothing = new View.OnClickListener(){
+			public void onClick(View v) {}
+		};
+		poolViewGroup.setOnClickListener(doNothing);
+		currentViewGroup.setOnClickListener(doNothing);
 	}
 
 	/**
@@ -130,8 +142,13 @@ public class DiceSet {
 	public void copyFrom(DiceSet that) {
 		for (int i=0 ; i<dice.length ; ++i) {
 			dice[i].setCount(that.dice[i].getCount());
+			// special case to not display constant of zero
+			if (dice[i].getSides()==1 && dice[i].getCount()==0) {
+				dice[i].clear();
+			}
 		}
 		target.setCount(that.target.getCount());
+		specialSpinner.setSelectedItemPosition(that.specialSpinner.getSelectedItemPosition());
 	}
 	
 	/**
@@ -159,6 +176,10 @@ public class DiceSet {
 	public void restoreInstanceState(Bundle savedInstanceState, String prefix) {
 		for (CurrentDicePile c : dice) {
 			c.setCount(savedInstanceState.getInt(prefix+"d"+c.getSides()));
+			// special case to not display constant of zero
+			if (c.getSides()==1 && c.getCount()==0) {
+				c.clear();
+			}
 		}
 		target.setCount(savedInstanceState.getInt(prefix+"target"));
 		specialSpinner.setSelectedItemPosition(savedInstanceState.getInt(prefix+"spinner"));
@@ -185,7 +206,7 @@ public class DiceSet {
 		// current dice: number of sides, and number of dice pairs
 		public SparseIntArray sidesToCount = new SparseIntArray();
 		public int target;
-		public SpecialSpinner.Special special;
+		public Special special;
 	}
 	
 	/**
@@ -218,8 +239,8 @@ public class DiceSet {
 			in.target = target.getCount();
 			in.special = specialSpinner.getSelected();
 			
-			answer_fraction.setText("");
-			answer_probability.setText("?");
+			answerFraction.setText("");
+			answerProbability.setText("?");
 			
 			new BackgroundJob().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, in);
 		}
@@ -237,20 +258,17 @@ public class DiceSet {
 		protected BackgroundOut doInBackground(BackgroundIn... arg0) {
 			BackgroundIn in = arg0[0];
 			
-			// calculate both the distribution and the textual description
-			// of the dice formula
-			ArrayList<String> dice = in.special.getFormulaDice(in.sidesToCount);
+			// calculate the distribution
 			Distribution d = in.special.getDistribution(in.sidesToCount);
 			// no modification to d after this; cache the cumulative values
-			d = new CachedCumulativeDistribution(d);
+			d = d.cacheCumulative();
 			
 			BackgroundOut out = new BackgroundOut();
 			out.serial = in.serial;
 			out.distribution = d;
 			out.target = in.target;
 			
-			// format the textual answer of the distribution at the target
-			if (d.upperBound()-d.lowerBound() <= 1) {
+			if (d.isZero()) {
 				// if distribution is trivial then show minimal text
 				out.answerFraction = "";
 				out.answerProbability = answerFormatter.format(0.0d);
@@ -270,30 +288,8 @@ public class DiceSet {
 				}
 			}
 			
-			// convert the dice array into a formula String
-			if (dice.size()==0) {
-				out.answerFormula = "";
-			} else {
-				StringBuilder sb = new StringBuilder(dice.get(0));
-				for (int i=1 ; i<dice.size() ; ++i) {
-					final String die = dice.get(i);
-					if (die.startsWith("-")) {
-						sb.append(" ");
-					} else {
-						sb.append(" + ");
-					}
-					sb.append(die);
-				}
-				sb.append(" ");
-				sb.append(GREATER_THAN_OR_EQUAL_TO);
-				sb.append(" ");
-				sb.append(in.target);
-				sb.append(" ");
-				sb.append(RIGHT_ARROW);
-				sb.append(" ");
-				sb.append(out.answerProbability);
-				out.answerFormula = sb.toString();
-			}
+			// format the textual answer of the distribution at the target
+			out.answerFormula = in.special.getFormula(in.sidesToCount, in.target, out.answerProbability);
 			
 			return out;
 		}
@@ -306,8 +302,9 @@ public class DiceSet {
 		protected void onPostExecute(BackgroundOut out) {
 			running = false;
 			if (out.serial == serial) {
-				answer_fraction.setText(out.answerFraction);
-				answer_probability.setText(out.answerProbability);
+				answerFraction.setText(out.answerFraction);
+				answerProbability.setText(out.answerProbability);
+				check.set(out.answerProbability, out.distribution, out.target);
 				graphSetter.setResult(out.distribution, out.target, out.answerFormula);
 			} else {
 				// the dice have changed since we started the background task
